@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.github.eliseoorellana.foro.errores.TratadorDeErrores.TopicNotFoundException;
 import io.github.eliseoorellana.foro.errores.ValidacionDeIntegridad;
 import io.github.eliseoorellana.foro.model.Topic;
 import io.github.eliseoorellana.foro.repository.TopicRepository;
@@ -71,5 +71,31 @@ public class TopicController {
         topicRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
+
+@PutMapping("/{id}")
+    // @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Topic> updateTopic(@PathVariable Long id, @RequestBody Topic updatedTopic) {
+        Optional<Topic> existingTopicOptional = topicRepository.findById(id);
+        if (existingTopicOptional.isEmpty()) {
+            throw new ValidacionDeIntegridad("Topic with ID " + id + " does not exist");
+        }
+
+        Topic existingTopic = existingTopicOptional.get();
+
+        // Verificar si el usuario existe
+        if (!userRepository.existsById(updatedTopic.getUserId())) {
+            throw new EntityNotFoundException("User not found");
+        }
+
+        // Actualizar los campos relevantes
+        existingTopic.setTitle(updatedTopic.getTitle());
+        existingTopic.setMessage(updatedTopic.getMessage());
+        existingTopic.setUserId(updatedTopic.getUserId());
+
+        // Guardar el topic actualizado
+        Topic savedTopic = topicRepository.save(existingTopic);
+        return new ResponseEntity<>(savedTopic, HttpStatus.OK);
+    }
+
 
 }
